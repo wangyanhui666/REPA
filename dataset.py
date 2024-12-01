@@ -1,4 +1,5 @@
 import os
+import re
 import json
 
 import torch
@@ -22,31 +23,37 @@ class CustomDataset(Dataset):
         self.features_dir = os.path.join(data_dir, 'vae-sd')
 
         # images
-        self._image_fnames = {
-            os.path.relpath(os.path.join(root, fname), start=self.images_dir)
-            for root, _dirs, files in os.walk(self.images_dir) for fname in files
-            }
-        self.image_fnames = sorted(
-            fname for fname in self._image_fnames if self._file_ext(fname) in supported_ext
-            )
+        image_json_path=os.path.join(self.images_dir, 'dataset.json')
+        with open( image_json_path, 'r') as f:
+            image_data = json.load(f)
+        all_labels = image_data['labels']
+        self.image_fnames, self.labels = [], []
+
+        for item in all_labels:
+            fname, label = item
+            if self._file_ext(fname) in supported_ext:  # 检查文件扩展名是否受支持
+                self.image_fnames.append(fname)  # 相对路径
+                self.labels.append(label)
+        # 转换为绝对路径并排序
+        self.image_fnames = [os.path.join(self.images_dir, fname) for fname in self.image_fnames]
+        self.labels = np.array(self.labels).astype({1: np.int64, 2: np.float32}[np.array(self.labels).ndim])
+
         # features
-        self._feature_fnames = {
-            os.path.relpath(os.path.join(root, fname), start=self.features_dir)
-            for root, _dirs, files in os.walk(self.features_dir) for fname in files
-            }
-        self.feature_fnames = sorted(
-            fname for fname in self._feature_fnames if self._file_ext(fname) in supported_ext
-            )
-        # labels
-        fname = 'dataset.json'
-        with open(os.path.join(self.features_dir, fname), 'rb') as f:
-            labels = json.load(f)['labels']
-        labels = dict(labels)
-        labels = [labels[fname.replace('\\', '/')] for fname in self.feature_fnames]
-        labels = np.array(labels)
-        self.labels = labels.astype({1: np.int64, 2: np.float32}[labels.ndim])
+        feature_json_path=os.path.join(self.features_dir, 'dataset.json')
+        with open( feature_json_path, 'r') as f:
+            feature_data = json.load(f)
+        all_labels = feature_data['labels']
+        self.feature_fnames = []
+        for item in all_labels:
+            fname, label = item
+            if self._file_ext(fname) in supported_ext:
+                self.feature_fnames.append(fname)
+        # 转换为绝对路径并排序
+        self.feature_fnames = [os.path.join(self.features_dir, fname) for fname in self.feature_fnames]
+        assert len(self.image_fnames) == len(self.feature_fnames), "Mismatch between images and features"
 
 
+    
     def _file_ext(self, fname):
         return os.path.splitext(fname)[1].lower()
 
@@ -59,7 +66,7 @@ class CustomDataset(Dataset):
         image_fname = self.image_fnames[idx]
         feature_fname = self.feature_fnames[idx]
         image_ext = self._file_ext(image_fname)
-        with open(os.path.join(self.images_dir, image_fname), 'rb') as f:
+        with open(image_fname, 'rb') as f:
             if image_ext == '.npy':
                 image = np.load(f)
                 image = image.reshape(-1, *image.shape[-2:])

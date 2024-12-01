@@ -116,7 +116,7 @@ def requires_grad(model, flag=True):
 #                                  Training Loop                                #
 #################################################################################
 
-def main(args):    
+def main(args):
     # set accelerator
     logging_dir = Path(args.output_dir, args.logging_dir)
     accelerator_project_config = ProjectConfiguration(
