@@ -1,0 +1,71 @@
+description: t2vg_repa_baseline
+
+target:
+  service: sing
+  name: msroctovc
+  workspace_name: t2vgws2
+
+environment:
+  # amlt cache base-image
+  # image: amlt-sing/acpt-2.2.1-py3.10-cuda12.1
+  image: deeptimhe/ubuntu22.04-cuda12.1-python3.10-pytorch2.2:orig-sing-0610-simpler
+  registry: docker.io
+  setup:
+  - python -m pip install --upgrade pip
+  - sudo apt-get update
+  
+storage:
+  t2vg:
+    storage_account_name: guangtingsc
+    container_name: t2vg
+  t2vgusw2_videos:
+    storage_account_name: t2vgusw2
+    container_name: videos
+
+code:
+  local_dir: $CONFIG_DIR/../../
+  
+
+jobs:
+- name: 1201-dit-256-a100-16-repadata_1
+  # sku: 80G8-H100 # [G8, 80G4-A100] `amlt target list sing --verbose` to specify the series
+  sku: 2x40G8-A100-IB
+  # sku: 80G1-H100 # [G8, 80G4-A100] `amlt target list sing --verbose` to specify the series
+  process_count_per_node: 1
+  mpi: true
+  execution_mode: Basic
+  priority: High # [High, Medium, Low]. On AMLK8s, the priority value is mapped to 200, 100, and 80, respectively.
+  sla_tier: premium               # [premium, standard, basic]
+  identity: managed
+  submit_args:
+    env:
+      SHARED_MEMORY_PERCENT: 1
+    container_args:
+      shm_size: 8192g
+  command:
+    # Read the environment variables
+    - export $$(grep -v '^#' .env | xargs)
+    - nvidia-smi
+    - pip list
+
+    # Package installation
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip list
+    - pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+    - pip install -r requirements.txt
+    # important! fix attention bugs of pytorch
+    # - cp ./diffusion_diffusers/attention_processor.py venv/lib/python3.10/site-packages/diffusers/models/
+    # wandb login
+    - export WANDB_API_KEY="local-9fd3e86800565dfa4b2a5592ccfaf45ef59ec0c6"
+    - wandb login local-9fd3e86800565dfa4b2a5592ccfaf45ef59ec0c6 --relogin --host=https://microsoft-research.wandb.io
+
+    # Here start the code
+    - echo "Start running the code"
+    - huggingface-cli login --token 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
+    # - bash -c 'for ((i=0; i<7200; i++)); do nvidia-smi >> /mnt/guangtingsc_jingxuz/nvidia_smi_48a100.txt; sleep 2; done' &
+    - bash run_sing_repa_multinode.sh 16 2
+    # - bash run_sing_diffdiff_multinode.sh 16
+    # Finish the code
+    - echo "End of the code"
+    - sleep infinity
