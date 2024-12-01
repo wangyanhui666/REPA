@@ -153,8 +153,17 @@ def main(args):
     assert args.resolution % 8 == 0, "Image size must be divisible by 8 (for the VAE encoder)."
     latent_size = args.resolution // 8
 
+    # load encoder
+    # 设置独立的缓存目录
+    rank = int(os.getenv("RANK", 0))  # 分布式训练中的 rank
+    os.environ["TORCH_HOME"] = f"/tmp/torch_cache_{rank}"
     if args.enc_type != 'None':
-        encoders, encoder_types, architectures = load_encoders(args.enc_type, device)
+        if accelerator.is_main_process:
+            # 只有主进程加载模型
+             encoders, encoder_types, architectures = load_encoders(args.enc_type, device,)
+        accelerator.wait_for_everyone()
+
+        encoders, encoder_types, architectures = load_encoders(args.enc_type, device,force_reload=False)
     else:
         encoders, encoder_types, architectures = [None], [None], [None]
     z_dims = [encoder.embed_dim for encoder in encoders] if args.enc_type != 'None' else [0]

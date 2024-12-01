@@ -50,7 +50,7 @@ def fix_mocov3_state_dict(state_dict):
     return state_dict
 
 @torch.no_grad()
-def load_encoders(enc_type, device):
+def load_encoders(enc_type, device,force_reload=True):
     enc_names = enc_type.split(',')
     encoders, architectures, encoder_types = [], [], []
     for enc_name in enc_names:
@@ -79,9 +79,9 @@ def load_encoders(enc_type, device):
         elif 'dinov2' in encoder_type:
             import timm
             if 'reg' in encoder_type:
-                encoder = torch.hub.load('facebookresearch/dinov2', f'dinov2_vit{model_config}14_reg')
+                encoder = torch.hub.load('facebookresearch/dinov2', f'dinov2_vit{model_config}14_reg',force_reload=force_reload)
             else:
-                encoder = torch.hub.load('facebookresearch/dinov2', f'dinov2_vit{model_config}14')
+                encoder = torch.hub.load('facebookresearch/dinov2', f'dinov2_vit{model_config}14',force_reload=force_reload)
             del encoder.head
             encoder.pos_embed.data = timm.layers.pos_embed.resample_abs_pos_embed(
                 encoder.pos_embed.data, [16, 16],
