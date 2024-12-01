@@ -19,6 +19,7 @@ accelerate launch \
     --enc-type="dinov2-vit-b" \
     --proj-coeff=0.5 \
     --encoder-depth=8 \
+    --max-train-steps 500000 \
     --output-dir ~/guangtingsc/t2vg/dit/logs/debug_repa_256/1201_debug_repa_1 \
     --exp-name="linear-dinov2-b-enc8" \
     --data-dir="/home/t2vg-a100-G4-42/t2vgusw2/videos/imagenet/sd_latents/REPA_256"
