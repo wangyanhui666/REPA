@@ -11,6 +11,7 @@ evaluation metrics via the ADM repo: https://github.com/openai/guided-diffusion/
 
 For a simple single-GPU/CPU sampling script, see sample.py.
 """
+import sys
 import torch
 import torch.distributed as dist
 from models.sit import SiT_models
@@ -164,9 +165,10 @@ def main(args):
     if rank == 0:
         create_npz_from_sample_folder(sample_folder_dir, args.num_fid_samples)
         print("Done.")
-    dist.barrier()
-    dist.destroy_process_group()
-
+        dist.destroy_process_group()  # 仅 rank 0 销毁进程组
+    else:
+        dist.destroy_process_group()  # 其他 rank 直接退出
+        sys.exit(0)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
