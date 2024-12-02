@@ -132,7 +132,7 @@ def main(args):
 
     if accelerator.is_main_process:
         os.makedirs(args.output_dir, exist_ok=True)  # Make results folder (holds all experiment subfolders)
-        save_dir = os.path.join(args.output_dir, args.exp_name)
+        save_dir = args.output_dir
         os.makedirs(save_dir, exist_ok=True)
         args_dict = vars(args)
         # Save to a JSON file
@@ -239,7 +239,7 @@ def main(args):
     if args.resume_step > 0:
         ckpt_name = str(args.resume_step).zfill(7) +'.pt'
         ckpt = torch.load(
-            f'{os.path.join(args.output_dir, args.exp_name)}/checkpoints/{ckpt_name}',
+            f'{args.output_dir}/checkpoints/{ckpt_name}',
             map_location='cpu',
             )
         model.load_state_dict(ckpt['model'])
