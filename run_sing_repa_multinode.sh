@@ -33,6 +33,6 @@ accelerate launch \
     --encoder-depth=8 \
     --max-train-steps 500000 \
     --num-workers ${1} \
-    --output-dir /mnt/t2vg/dit/logs/train_repa_256/1201_linear-dinov2-b-enc8_baseline_1 \
+    --output-dir /mnt/t2vg/dit/logs/train_repa_256/ \
     --exp-name="1201_linear-dinov2-b-enc8_baseline_1" \
     --data-dir="/mnt/t2vgusw2_videos/imagenet/sd_latents/REPA_256"
